@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-FRAe2AD+6oCZW2uHL2fdIyBnoxpkWjSs+6GM07p82Vk='; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; worker-src blob:; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-xz3D4GgdMV+bGtj7JfXjcI9On5T1g507gWf2FZVqnHs='; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; worker-src blob:; object-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
 <title>인사 배치 · 발령 유인물</title>
@@ -522,6 +522,31 @@ table.ho td.notes .nl{padding-left:1.1em;text-indent:-1.1em;line-height:1.35}
   #hoPrint .page:last-child{page-break-after:auto;break-after:auto}
   table.ho td.bl,table.ho td.ye{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* ── 상단 탭 반응형: 한 줄에 다 들어가면 한 줄, 넘치면 탭을 아랫줄로 내려 줄바꿈 ── */
+body{display:flex;flex-direction:column}
+.workspace{height:auto;flex:1 1 auto;min-height:0}
+.topbar{flex:none;min-height:48px}
+.tab{flex-direction:column;justify-content:center;gap:0;line-height:1.2;padding:0 12px}
+.tab .yr{font-size:10.5px;line-height:1.15}
+.tabs{scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.topbar.stack{height:auto;flex-wrap:wrap;align-items:center;row-gap:0;column-gap:14px}
+.topbar.stack .brand,.topbar.stack .top-actions{height:46px}
+.topbar.stack .top-actions{margin-left:auto}
+.topbar.stack .tabs{order:3;flex:1 1 100%;flex-wrap:wrap;overflow:visible;gap:0 2px;margin:0 -14px;padding:0 8px;border-top:1px solid var(--line);align-self:stretch}
+.topbar.stack .tab{flex:1 1 auto;min-height:40px;padding:4px 10px 2px;text-align:center;align-items:center}
+@media (max-width:1100px){
+  .topbar.stack .brand-title{font-size:14px}
+  .topbar.stack .tab{padding:4px 7px 2px;font-size:12.5px}
+}
+@media (max-width:760px){
+  .topbar.stack .brand-title{display:none}
+  .topbar.stack .top-actions .btn{padding:5px 8px}
+}
+.content-head{flex-wrap:wrap;row-gap:6px}
+.content-head h2{white-space:nowrap}
+.content-head .tag{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1974,10 +1999,18 @@ function renderTop(){
     nav.append(h('button', { type:'button', class:'tab'+(t.id===ui.tab?' active':''), onclick:()=>{ ui.tab=t.id; ui.selSchool=ui.selSubject=null; renderAll(); } },
       t.title, (t.yr==='prev' && py) ? h('span',{class:'yr', text:`(${py})`}) : (t.yr==='base' && state.baseDate) ? h('span',{class:'yr', text:`(${state.baseDate.y})`}) : null));
   }
+  fitTabs();
   const ab = $('adminBtn');
   ab.textContent = isAdmin ? '관리자 ●' : '관리자';
   ab.classList.toggle('admin-on', isAdmin);
 }
+function fitTabs(){
+  const bar = document.querySelector('.topbar'), nav = $('tabs'); if(!bar || !nav) return;
+  bar.classList.remove('stack');
+  if(nav.scrollWidth > nav.clientWidth + 1) bar.classList.add('stack');
+}
+let fitTabsRaf = 0;
+window.addEventListener('resize', ()=>{ cancelAnimationFrame(fitTabsRaf); fitTabsRaf = requestAnimationFrame(fitTabs); });
 function currentTab(){ return TABS.find(t=>t.id===ui.tab) || TABS[0]; }
 function renderView(){
   const t = currentTab();
