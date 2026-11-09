@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gy0EMGmcD08TAvgLFzoY8Bo7J/SzIA3Q2d4jGJp4Wfs='; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; worker-src blob:; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-n0okBWKZn4+O+BFIil5If8RXCA+iuN6uN8h+18Uz2N0='; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; worker-src blob:; object-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
 <title>인사 배치 · 발령 유인물</title>
@@ -934,7 +934,7 @@ const LOSS_COLS = [
   {k:'leave',    label:'휴직·면직·진로·정퇴',  kind:'names', cats:[['휴직','휴'],['면직','면'],['진로','진'],['정퇴','퇴']]}
 ];
 /* 충원 이름에 붙이는 항목 — 화면에는 첫 글자만: 홍길동(초), 홍길동(수), 기타는 입력한 내용의 첫 글자 */
-const GAIN_CATS = [['','항목 없음'],['초빙','초'],['수석교사','수'],['기타','']];
+const GAIN_CATS = [['','항목 없음'],['초빙','초'],['수석교사','수'],['신규','신'],['기타','']];
 const GAIN_COLS = [
   {k:'gLocal',  label:'관내내신', kind:'names', suggest:'in', cats:GAIN_CATS, optional:true},
   {k:'gExt',    label:'관외전입', kind:'names', cats:GAIN_CATS, optional:true},
@@ -2604,7 +2604,7 @@ function renderPop(focusAdd){
     const removeEntry = id => { setEntries(sj, school, k, getEntries(sj, school, k).filter(x=>x.id!==id)); afterEdit(false); };
     const entries = getEntries(sj, school, k);
     const apOn = !loss && col.kind==='names' && k!=='gLocal' && state.incoming && state.incoming.people.length;
-    if(apOn && entries.length) body.append(h('div',{class:'pop-sec', text:`이 칸에 넣은 사람 ${entries.length}명 · 왼쪽에서 특이사항(초빙·수석교사·기타) 선택 · 이름을 누르면 되돌리기`}));
+    if(apOn && entries.length) body.append(h('div',{class:'pop-sec', text:`이 칸에 넣은 사람 ${entries.length}명 · 왼쪽에서 특이사항(초빙·수석교사·신규·기타) 선택 · 이름을 누르면 되돌리기`}));
     if(!entries.length && col.kind!=='roster') body.append(h('div',{class:'pop-empty', text: apOn ? '입력된 사람이 없습니다. 아래 발령 명단에서 고르거나 직접 추가하세요.' : '입력된 사람이 없습니다. 아래에서 추가하세요.'}));
     for(const en of entries){
       const row = h('div',{class:'pop-row'+(en.aid?' appt':'')});
@@ -4095,7 +4095,7 @@ function defaultLossMap(){
   return m;
 }
 function defaultGainMap(){ return {gLocal:'관내', gExt:'청간', gReturn:'파견복귀', gReinst:'복직', gOther:'타시도전입', gHold:'홀드', gNew:'신규', gTemp:'기간제', toDown:'TO감', struck:'미발령'}; }
-function defaultNoteMap(){ return {'초빙':'초빙', '수석교사':'수석교사', gTemp:'정원외 기간제', gTempUn:'미배치 기간제'}; }
+function defaultNoteMap(){ return {'초빙':'초빙', '수석교사':'수석교사', '신규':'신규', gTemp:'정원외 기간제', gTempUn:'미배치 기간제'}; }
 function defaultLink(){ return {auto:true, loss:defaultLossMap(), gain:defaultGainMap(), note:defaultNoteMap(), subj:{}, struckTo:'·'}; }
 function defaultSummary(){
   return {
@@ -4327,7 +4327,8 @@ function genRows(sc){
         for(let i=0;i<n-un;i++) G.push({gk:'C'+i, type:gainType(col.k), note:S.link.note.gTemp||''});
         for(let i=0;i<un;i++) G.push({gk:'U'+i, type:gainType(col.k), note:S.link.note.gTempUn||''});
       } else for(const en of cv.add||[]){
-        G.push({gk:'E'+en.id, type:gainType(col.k), name:en.name, note:gainNote(en),
+        const gt = gainType(col.k), gn = gainNote(en);
+        G.push({gk:'E'+en.id, type:gt, name:en.name, note: gn===gt ? '' : gn,   // 신규 칸의 「신규」처럼 구분과 같은 비고는 생략
           from: col.k==='gLocal' ? localFrom(en, sj) : col.k==='gExt' ? extFrom(en, sj) : ''});
       }
     }
@@ -4732,7 +4733,7 @@ const PANES = {
     const f2=h('div',{class:'form'});
     for(const [k,t] of gainRows) f2.append(h('label',{text:t}), makeSelect(S.resTypes, Lk.gain[k]||'', v=>{ Lk.gain[k]=v; markChanged(); }));
     const f3=h('div',{class:'form'});
-    const noteRows=[['초빙','충원 항목 「초빙」 → 비고'],['수석교사','충원 항목 「수석교사」 → 비고'],['gTemp','정원외(강사) 중 정원외 → 비고'],['gTempUn','정원외(강사) 중 미배치 → 비고']];
+    const noteRows=[['초빙','충원 항목 「초빙」 → 비고'],['수석교사','충원 항목 「수석교사」 → 비고'],['신규','충원 항목 「신규」 → 비고'],['gTemp','정원외(강사) 중 정원외 → 비고'],['gTempUn','정원외(강사) 중 미배치 → 비고']];
     for(const [k,t] of noteRows){ const i=h('input',{value:Lk.note[k]??'',list:'dl-ho-notes'}); i.addEventListener('change',()=>{ Lk.note[k]=clean(i.value); markChanged(); }); f3.append(h('label',{text:t}), i); }
     const stTo=h('input',{value:Lk.struckTo??''}); stTo.addEventListener('change',()=>{ Lk.struckTo=clean(stTo.value); markChanged(); });
     f3.append(h('label',{text:'미발령 행의 발령교 칸'}), stTo);
